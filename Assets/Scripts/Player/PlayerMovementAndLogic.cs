@@ -6,24 +6,31 @@ using UnityEngine.UI;
 public class PlayerMovementAndLogic : MonoBehaviour
 {
     // mobile movement
-    private bool isMobile = true;
+    private bool isMobile = false;
     private bool moveLeft;
     private bool moveRight;
     private float jumpHeight = 18f;
     public float moveSpeed = 9f;
-
- 
-
-    // Assign these in the Inspector by dragging the UI Button GameObjects into the slots
+    
 
     private Rigidbody2D rb;
     private float dirX;
 
+    // Sound effect
+    [SerializeField] private AudioSource jumpSoundEffect;
+
+    // Animations
+    private Animator anim;
+    private enum MovementState { idle, running, falling, jumping }
+    private MovementState state = MovementState.idle;
+    private SpriteRenderer sprite;
     void Start()
     {
         moveLeft = false;
         moveRight = false;
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        sprite = GetComponent<SpriteRenderer>();
     }
     void Update()
     {
@@ -41,16 +48,46 @@ public class PlayerMovementAndLogic : MonoBehaviour
         }
 
         rb.velocity = new Vector2(dirX * moveSpeed, rb.velocity.y);
-
+        UpdateAnimations(dirX);
     }
 
     
 
     public void PerformJump()
     {
+        jumpSoundEffect.Play();
         rb.velocity = new Vector2(rb.velocity.x, jumpHeight);
+     
     }
 
+
+    // Animations
+    private void UpdateAnimations(float dirX)
+    {
+        // If player is on the move
+        if (dirX != 0f)
+        {
+            state = MovementState.running;
+            // if player going left
+            if (dirX < 0f)
+            {
+                sprite.flipX = true;
+            }
+
+            // if player going right
+            if (dirX > 0f)
+            {
+                sprite.flipX = false;
+            }
+        }
+        else
+        {
+            state = MovementState.idle;
+        }
+        if (rb.velocity.y > .1f) state = MovementState.jumping;
+        else if (rb.velocity.y < -.1f) state = MovementState.falling;
+        anim.SetInteger("state", (int)state);
+    }
 
 
 
